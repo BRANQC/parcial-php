@@ -1,16 +1,16 @@
 <?php
-include '../modelo/Persona.php';
-include '../control/ControlPersona.php';
+include '../modelo/Vendedor.php';
+include '../control/ControlVendedor.php';
 include '../control/ControlConexionPdo.php';
 echo "Hola bienvenidos";
-    $objPersona = new Vendedor("", "", "", "", "", "");
-    $objControlPersona = new ControlPersona($objVendedor);
-    $objControlPersona->guardar();
-    $objPersona = new Vendedor("", "", "", "", "", "");
-    $objControlPersona = new ControlPersona($objVendedor);
-    $objControlPersona->modificar();
-    $objPersona = new Vendedor("", "", "", "", "", "");
-    $objControlPersona = new ControlPersona($objVendedor);
-    $objControlPersona->eliminar();
+    $objVendedor = new Vendedor("", "", "", "", "", "");
+    $objControlVendedor = new ControlPersona($objVendedor);
+    $objControlVendedor->guardar();
+    $objVendedor = new Vendedor("", "", "", "", "", "");
+    $objControlVendedor = new ControlPersona($objVendedor);
+    $objControlVendedor->modificar();
+    $objVendedor = new Vendedor("", "", "", "", "", "");
+    $objControlVendedor = new ControlPersona($objVendedor);
+    $objControlVendedor->eliminar();
 echo "<br>"."Listo!";
 ?>
