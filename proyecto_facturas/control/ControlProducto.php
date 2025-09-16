@@ -1,40 +1,40 @@
 <?php
-    class ControlCodigo {
+    class ControlProducto {
         //CRUD
-        public $objCodigo;
-        function __construct($objCodigo) {
-            $this->objCodigo = $objCodigo;
+        public $objProducto;
+        function __construct($objProducto) {
+            $this->objProducto = $objProducto;
         }
         // Create(Insert into)
         function guardar(){
-            $cod = $this->objCodigo->getCodigo();
-            $nom = $this->objCodigo->getNombre();
-            $tel = $this->objCodigo->getTelefono();
-            $email = $this->objCodigo->getEmail();
+            $cod = $this->objProducto->getCodigo();
+            $nom = $this->objProducto->getNombre();
+            $stock = $this->objProducto->getStock();
+            $valor = $this->objProducto->getValorUnitario();
             $objControlConexion = new ControlConexionPdo();
             $objControlConexion->abrirBd("localhost", "root", "", "dbfactura", 3306);
-            $sql = "INSERT INTO codigo (codigo, nombre, telefono, email) VALUES ('$cod', '$nom', '$tel', '$email')";
+            $sql = "INSERT INTO producto (codigo, nombre, Stock, valor_unitario) VALUES ('$cod', '$nom', '$stock', '$valor')";
             $objControlConexion->ejecutarComandoSql($sql);
             $objControlConexion->cerrarBd();
         }
 
         function modificar(){
-            $cod = $this->objCodigo->getCodigo();
-            $nom = $this->objCodigo->getNombre();
-            $tel = $this->objCodigo->getTelefono();
-            $email = $this->objCodigo->getEmail();
+            $cod = $this->objProducto->getCodigo();
+            $nom = $this->objProducto->getNombre();
+            $stock = $this->objProducto->getStock();
+            $valor = $this->objProducto->getValorUnitario();
             $objControlConexion = new ControlConexionPdo();
             $objControlConexion->abrirBd("localhost", "root", "", "dbfactura", 3306);
-            $sql = "UPDATE codigo SET nombre='$nom', telefono='$tel', email='$email' WHERE codigo='$cod'";
+            $sql = "UPDATE producto SET nombre='$nom', stock='$stock', valor_unitario='$valor' WHERE codigo='$cod'";
             $objControlConexion->ejecutarComandoSql($sql);
             $objControlConexion->cerrarBd();
         }
 
         function eliminar(){
-            $cod = $this->objCodigo->getCodigo();
+            $cod = $this->objProducto->getCodigo();
             $objControlConexion = new ControlConexionPdo();
             $objControlConexion->abrirBd("localhost", "root", "", "dbfactura", 3306);
-            $sql = "DELETE FROM codigo WHERE codigo='$cod'";
+            $sql = "DELETE FROM producto WHERE codigo='$cod'";
             $objControlConexion->ejecutarComandoSql($sql);
             $objControlConexion->cerrarBd();
         }
