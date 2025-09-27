@@ -14,7 +14,7 @@
             $email = $this->objCliente->getEmail();
             $objControlConexion = new ControlConexionPdo();
             $objControlConexion->abrirBd("localhost", "root", "", "dbfactura", 3306);
-            $sql = "INSERT INTO cliente (codigo, credito, nombre, telefono, email) VALUES ('$cod', '$credito', '$nom', '$tel', '$email')";
+            $sql = "INSERT INTO cliente (codigo, credito, nombre, telefono, email) VALUES ('$cod', $credito, '$nom', '$tel', '$email')";
             $objControlConexion->ejecutarComandoSql($sql);
             $objControlConexion->cerrarBd();
         }

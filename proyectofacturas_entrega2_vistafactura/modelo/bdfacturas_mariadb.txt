@@ -1,0 +1,297 @@
+-- Crea todas las tablas necesarias para el sistema.
+CREATE TABLE persona
+(
+    codigo VARCHAR(20) NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20) NOT NULL,
+    CONSTRAINT persona_pkey PRIMARY KEY (codigo)
+);
+
+CREATE TABLE vendedor
+(
+    id INT NOT NULL AUTO_INCREMENT,
+    carnet INT NOT NULL,
+    direccion VARCHAR(100) NOT NULL,
+    fkcodpersona VARCHAR(20) UNIQUE NOT NULL,
+    CONSTRAINT vendedor_pkey PRIMARY KEY (id),
+    CONSTRAINT cons_unique_fkcodpersona UNIQUE (fkcodpersona)
+);
+
+CREATE TABLE empresa
+(
+    codigo VARCHAR(10) NOT NULL,
+    nombre VARCHAR(200) NOT NULL,
+    CONSTRAINT empresa_pkey PRIMARY KEY (codigo)
+);
+
+CREATE TABLE cliente
+(
+    id INT NOT NULL AUTO_INCREMENT,
+    credito FLOAT(53) NOT NULL DEFAULT 0,
+    fkcodpersona VARCHAR(20) UNIQUE NOT NULL,
+    fkcodempresa VARCHAR(10),
+    CONSTRAINT cliente_pkey PRIMARY KEY (id),
+    CONSTRAINT cons_unique_fkcodpersona1 UNIQUE (fkcodpersona)
+);
+
+CREATE TABLE factura
+(
+    numero INT NOT NULL AUTO_INCREMENT,
+    fecha DATETIME NOT NULL DEFAULT NOW(),
+    total FLOAT(53) NOT NULL DEFAULT 0,
+    fkidcliente INT NOT NULL,
+    fkidvendedor INT NOT NULL,
+    CONSTRAINT factura_pkey PRIMARY KEY (numero)
+);
+
+CREATE TABLE producto
+(
+    codigo VARCHAR(30) NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    existencia INT NOT NULL,
+    valorunitario FLOAT(53) NOT NULL,
+    CONSTRAINT producto_pkey PRIMARY KEY (codigo)
+);
+
+CREATE TABLE productosporfactura
+(
+    fknumfactura INT NOT NULL,
+    fkcodproducto VARCHAR(30) NOT NULL,
+    cantidad INT NOT NULL,
+    subtotal FLOAT(53) NOT NULL DEFAULT 0,
+    CONSTRAINT productosporfactura_pkey PRIMARY KEY (fknumfactura, fkcodproducto)
+);
+
+CREATE TABLE rol
+(
+    id INT NOT NULL AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    CONSTRAINT rol_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE rol_usuario
+(
+    fkemail VARCHAR(100) NOT NULL,
+    fkidrol INT NOT NULL,
+    CONSTRAINT rol_usuario_pkey PRIMARY KEY (fkemail, fkidrol)
+);
+
+CREATE TABLE usuario
+(
+    email VARCHAR(100) NOT NULL,
+    contrasena VARCHAR(100) NOT NULL,
+    CONSTRAINT usuario_pkey PRIMARY KEY (email)
+);
+
+CREATE TABLE RutaRol
+(
+    Ruta VARCHAR(4000) NOT NULL,
+    Rol VARCHAR(100) NOT NULL
+);
+
+-- Agregar claves foráneas
+ALTER TABLE cliente
+    ADD CONSTRAINT cons_fkcodempresa FOREIGN KEY (fkcodempresa)
+    REFERENCES empresa (codigo);
+ALTER TABLE cliente
+    ADD CONSTRAINT cons_fkcodpersona FOREIGN KEY (fkcodpersona)
+    REFERENCES persona (codigo);
+ALTER TABLE factura
+    ADD CONSTRAINT cons_fkidcliente FOREIGN KEY (fkidcliente)
+    REFERENCES cliente (id);
+ALTER TABLE factura
+    ADD CONSTRAINT cons_fkidvendedor FOREIGN KEY (fkidvendedor)
+    REFERENCES vendedor (id);
+ALTER TABLE productosporfactura
+    ADD CONSTRAINT cons_fkcodproducto FOREIGN KEY (fkcodproducto)
+    REFERENCES producto (codigo);
+ALTER TABLE productosporfactura
+    ADD CONSTRAINT cons_fknumfactura FOREIGN KEY (fknumfactura)
+    REFERENCES factura (numero)
+    ON DELETE CASCADE;
+ALTER TABLE rol_usuario
+    ADD CONSTRAINT rol_usuario_ibfk_1 FOREIGN KEY (fkemail)
+    REFERENCES usuario (email)
+    ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE rol_usuario
+    ADD CONSTRAINT rol_usuario_ibfk_2 FOREIGN KEY (fkidrol)
+    REFERENCES rol (id);
+ALTER TABLE vendedor
+    ADD CONSTRAINT cons_fkcodpersona1 FOREIGN KEY (fkcodpersona)
+    REFERENCES persona (codigo);
+
+
+-- Insertar datos de prueba en las tablas
+INSERT INTO persona (codigo, nombre, email, telefono)
+VALUES 
+('P001', 'Juan Pérez', 'juan.perez@email.com', '555-1234'),
+('P002', 'Ana Gómez', 'ana.gomez@email.com', '555-5678'),
+('P003', 'Carlos Ruiz', 'carlos.ruiz@email.com', '555-8765');
+INSERT INTO empresa (codigo, nombre)
+VALUES 
+('E001', 'Empresa ABC'),
+('E002', 'Empresa XYZ');
+INSERT INTO vendedor (carnet, direccion, fkcodpersona)
+VALUES 
+(1001, 'Calle 123', 'P001'),
+(1002, 'Avenida 456', 'P002');
+INSERT INTO cliente (credito, fkcodpersona, fkcodempresa)
+VALUES 
+(5000.00, 'P003', 'E001'),
+(10000.00, 'P002', 'E002');
+INSERT INTO producto (codigo, nombre, existencia, valorunitario)
+VALUES 
+('PRD001', 'Producto A', 50, 100.00),
+('PRD002', 'Producto B', 30, 200.00),
+('PRD003', 'Producto C', 20, 150.00),
+('PRD004', 'Producto D', 25, 120.00),
+('PRD005', 'Producto E', 10, 180.00);
+INSERT INTO rol (nombre)
+VALUES 
+('Administrador'),
+('Vendedor');
+INSERT INTO usuario (email, contrasena)
+VALUES 
+('admin@email.com', 'admin123'),
+('vendedor@email.com', 'vendedor123');
+INSERT INTO rol_usuario (fkemail, fkidrol)
+VALUES 
+('admin@email.com', 1),
+('vendedor@email.com', 2);
+INSERT INTO RutaRol(Ruta,Rol) VALUES('/rol','Administrador');
+INSERT INTO RutaRol(Ruta,Rol) VALUES('/usuario','Administrador');
+INSERT INTO RutaRol(Ruta,Rol) VALUES('/persona','Administrador');
+INSERT INTO RutaRol(Ruta,Rol) VALUES('/vendedor','Vendedor');
+
+
+DELIMITER $$
+-- Procedimiento almacenado para insertar factura y productos
+CREATE PROCEDURE insertar_factura_y_productos(
+    IN fkidcliente INT,
+    IN fkidvendedor INT,
+    IN productos JSON
+)
+BEGIN
+    DECLARE nuevoNumeroFactura INT;
+    DECLARE totalFactura FLOAT(53) DEFAULT 0;
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE i INT DEFAULT 0;
+    DECLARE num_productos INT;
+    DECLARE productoId VARCHAR(30);
+    DECLARE cantidad INT;
+    DECLARE subtotal FLOAT(53);
+    
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    INSERT INTO factura (fkidcliente, fkidvendedor)
+    VALUES (fkidcliente, fkidvendedor);
+
+    SET nuevoNumeroFactura = LAST_INSERT_ID();
+
+    SET num_productos = JSON_LENGTH(productos);
+
+    WHILE i < num_productos DO
+        -- Extraer el código del producto y la cantidad del JSON
+        SET productoId = JSON_UNQUOTE(JSON_EXTRACT(productos, CONCAT('$[', i, '].fkcodproducto')));
+        SET cantidad = JSON_EXTRACT(productos, CONCAT('$[', i, '].cantidad'));
+
+        -- Obtener el valor unitario y verificar el existencia en una sola consulta
+        SELECT valorunitario INTO subtotal
+        FROM producto
+        WHERE codigo = productoId AND existencia >= cantidad;
+
+        IF subtotal IS NULL THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'No hay suficiente existencia de productos en bodega';
+        END IF;
+
+        -- Insertar el producto en la tabla productosporfactura
+        INSERT INTO productosporfactura (fknumfactura, fkcodproducto, cantidad, subtotal)
+        VALUES (nuevoNumeroFactura, productoId, cantidad, subtotal * cantidad);
+
+        -- Actualizar el existencia del producto
+        UPDATE producto
+        SET existencia = existencia - cantidad
+        WHERE codigo = productoId;
+
+        -- Sumar el subtotal al total de la factura
+        SET totalFactura = totalFactura + (subtotal * cantidad);
+        
+        SET i = i + 1;
+    END WHILE;
+
+    -- Actualizar el total en la factura
+    UPDATE factura
+    SET total = totalFactura
+    WHERE numero = nuevoNumeroFactura;
+
+    COMMIT;
+END $$
+DELIMITER ;
+
+CALL insertar_factura_y_productos(
+    1, 
+    1, 
+    '[{"fkcodproducto": "PRD001", "cantidad": 2}, {"fkcodproducto": "PRD002", "cantidad": 1}, {"fkcodproducto": "PRD003", "cantidad": 3}]'
+);
+
+CALL insertar_factura_y_productos(
+    2, 
+    2, 
+    '[{"fkcodproducto": "PRD002", "cantidad": 2}, {"fkcodproducto": "PRD004", "cantidad": 1}, {"fkcodproducto": "PRD005", "cantidad": 1}]'
+);
+
+CALL insertar_factura_y_productos(
+    1, 
+    2, 
+    '[{"fkcodproducto": "PRD003", "cantidad": 1}, {"fkcodproducto": "PRD004", "cantidad": 3}, {"fkcodproducto": "PRD005", "cantidad": 2}]'
+);
+
+DELIMITER $$
+CREATE TRIGGER verificar_existencia_before_insert
+BEFORE INSERT ON productosporfactura
+FOR EACH ROW
+BEGIN
+    DECLARE existencia_disponible INT;
+
+    SELECT existencia INTO existencia_disponible
+    FROM producto
+    WHERE codigo = NEW.fkcodproducto;
+
+    IF NEW.cantidad > existencia_disponible THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No hay suficiente existencia de productos en bodega';
+    END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE TRIGGER actualizar_existencia_y_total_after_insert
+AFTER INSERT ON productosporfactura
+FOR EACH ROW
+BEGIN
+    DECLARE subtotal_calculado FLOAT;
+
+    -- Update product existencia
+    UPDATE producto
+    SET existencia = existencia - NEW.cantidad
+    WHERE codigo = NEW.fkcodproducto;
+
+    -- Calculate subtotal
+    SELECT valorunitario * NEW.cantidad INTO subtotal_calculado
+    FROM producto
+    WHERE codigo = NEW.fkcodproducto;
+
+    -- Update total on factura
+    UPDATE factura
+    SET total = total + subtotal_calculado
+    WHERE numero = NEW.fknumfactura;
+END $$
+DELIMITER ;

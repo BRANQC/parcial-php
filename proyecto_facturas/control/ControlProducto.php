@@ -13,7 +13,7 @@
             $valor = $this->objProducto->getValorUnitario();
             $objControlConexion = new ControlConexionPdo();
             $objControlConexion->abrirBd("localhost", "root", "", "dbfactura", 3306);
-            $sql = "INSERT INTO producto (codigo, nombre, Stock, valor_unitario) VALUES ('$cod', '$nom', '$stock', '$valor')";
+            $sql = "INSERT INTO producto (codigo, nombre, Stock, valor_unitario) VALUES ('$cod', '$nom', $stock, $valor)";
             $objControlConexion->ejecutarComandoSql($sql);
             $objControlConexion->cerrarBd();
         }
