@@ -53,27 +53,6 @@ $vendedores = [];
 $productos = [];
 $facturas = [];
 
-// Función para obtener el siguiente número de factura
-function obtenerSiguienteNumeroFactura() {
-    try {
-        $objControlConexionPdo = new ControlConexionPdo();
-        $objControlConexionPdo->abrirBd();
-        
-        // Obtener el próximo AUTO_INCREMENT de la tabla factura
-        $sql = "SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'factura'";
-        $result = $objControlConexionPdo->ejecutarSelect($sql);
-        
-        $siguienteNumero = 1;
-        if ($result && isset($result[0]['AUTO_INCREMENT'])) {
-            $siguienteNumero = $result[0]['AUTO_INCREMENT'];
-        }
-        
-        $objControlConexionPdo->cerrarBd();
-        return $siguienteNumero;
-    } catch (Exception $e) {
-        return 1;
-    }
-}
 
 // Función para cargar productos de una factura
 function cargarProductosFactura($numeroFactura) {
